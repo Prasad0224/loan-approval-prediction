@@ -1,0 +1,19 @@
+body {
+    background: #f5f7fb;
+    font-family: Arial;
+}
+
+.container {
+    margin-top: 60px;
+    max-width: 650px;
+}
+
+.main-card {
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+}
+
+.progress-bar {
+    font-weight: bold;
+}

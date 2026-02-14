@@ -1,0 +1,28 @@
+# python
+__pycache__/
+*.pyc
+
+# virtual env
+venv/
+.venv/
+env/
+
+# jupyter
+.ipynb_checkpoints/
+
+# model files (usually large)
+models/*.pkl
+*.joblib
+
+# flask
+instance/
+
+# env variables
+.env
+
+# vscode
+.vscode/
+
+# system
+.DS_Store
+Thumbs.db
