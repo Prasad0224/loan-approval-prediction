@@ -1,28 +1,18 @@
-# python
+# Python cache
 __pycache__/
 *.pyc
 
-# virtual env
+# Virtual environments
 venv/
 .venv/
-env/
+myenv/
 
-# jupyter
-.ipynb_checkpoints/
-
-# model files (usually large)
-models/*.pkl
-*.joblib
-
-# flask
-instance/
-
-# env variables
+# Environment variables
 .env
 
-# vscode
-.vscode/
+# Jupyter
+.ipynb_checkpoints/
 
-# system
+# OS files
 .DS_Store
 Thumbs.db

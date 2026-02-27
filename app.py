@@ -1,58 +1,90 @@
-from flask import Flask, render_template, request, jsonify
-import pandas as pd
-import joblib
+import streamlit as st
+import requests
 
-app = Flask(
-    __name__,
-    template_folder="templates",
-    static_folder="static"
+API_URL = "http://127.0.0.1:8000/predict"
+
+st.set_page_config(
+    page_title="Loan Risk Scoring",
+    layout="centered"
 )
 
+st.title("🏦 Loan Risk Scoring System")
+st.write("Enter applicant details to predict loan approval status.")
 
-model = joblib.load("models/loan_default_model.pkl")
-THRESHOLD = 0.4
+with st.form("loan_form"):
 
+    person_income = st.number_input("Annual Income (INR)")
+    loan_amnt = st.number_input("Loan Amount")
+    loan_int_rate = st.number_input("Interest Rate (%)")
 
-@app.route("/")
-def home():
-    return render_template("index.html")
+    cb_person_cred_hist_length = st.number_input(
+        "Credit History Length (years)"
+    )
 
+    person_emp_length = st.number_input(
+        "Employment Length (years)"
+    )
 
-@app.route("/predict", methods=["POST"])
-def predict():
-    data = request.json
+    person_age = st.number_input("Age")
 
-    income = float(data["person_income"])
-    loan = float(data["loan_amnt"])
+    cb_person_default_on_file = st.selectbox(
+        "Previous Default on File?",
+        ["Y", "N"]
+    )
 
-    # engineered features (same as notebook)
-    loan_percent_income = loan / income
-    is_high_debt = int(loan_percent_income > 0.4)
+    loan_grade = st.selectbox(
+        "Loan Grade",
+        ["A", "B", "C", "D", "E", "F", "G"]
+    )
 
-    df = pd.DataFrame([{
-        "person_income": income,
-        "loan_amnt": loan,
-        "loan_percent_income": loan_percent_income,
-        "loan_int_rate": float(data["loan_int_rate"]),
-        "loan_grade": data["loan_grade"],
-        "cb_person_default_on_file": data["cb_person_default_on_file"],
-        "cb_person_cred_hist_length": float(data["cb_person_cred_hist_length"]),
-        "person_emp_length": float(data["person_emp_length"]),
-        "person_home_ownership": data["person_home_ownership"],
-        "loan_intent": data["loan_intent"],
-        "person_age": float(data["person_age"]),
-        "is_high_debt": is_high_debt
-    }])
+    person_home_ownership = st.selectbox(
+        "Home Ownership",
+        ["RENT", "OWN", "MORTGAGE", "OTHER"]
+    )
 
-    prob = model.predict_proba(df)[0][1]
-    pred = int(prob > THRESHOLD)
+    loan_intent = st.selectbox(
+        "Loan Purpose",
+        [
+            "PERSONAL",
+            "EDUCATION",
+            "MEDICAL",
+            "VENTURE",
+            "HOMEIMPROVEMENT",
+            "DEBTCONSOLIDATION"
+        ]
+    )
 
-    return jsonify({
-        "probability": round(float(prob), 4),
-        "percent": int(prob * 100),
-        "decision": "Reject ❌" if pred else "Approve ✅"
-    })
+    submit = st.form_submit_button("Predict")
 
+if submit:
+    payload = {
+        "person_income": person_income,
+        "loan_amnt": loan_amnt,
+        "loan_int_rate": loan_int_rate,
+        "cb_person_cred_hist_length": cb_person_cred_hist_length,
+        "person_emp_length": person_emp_length,
+        "person_age": person_age,
+        "cb_person_default_on_file": cb_person_default_on_file,
+        "loan_grade": loan_grade,
+        "person_home_ownership": person_home_ownership,
+        "loan_intent": loan_intent
+    }
 
-if __name__ == "__main__":
-    app.run(debug=True)
+    with st.spinner("Predicting..."):
+        response = requests.post(API_URL, json=payload)
+
+    if response.status_code == 200:
+        result = response.json()
+
+        decision = result["decision"]
+        prob = result["default_probability"]
+
+        if decision == "Approve":
+            st.success(f"Decision: **{decision}**")
+            st.info(f"Default Probability: **{prob}**")
+        else:
+            st.error(f"Decision: **{decision}**")
+            st.info(f"Default Probability: **{prob}**")
+
+    else:
+        st.error("Prediction failed. Check backend or input values.")
